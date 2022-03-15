@@ -7,6 +7,8 @@ import json
 pi = 3.14159
 d2r = pi / 180
 r2d = 180 / pi
+first_col_offset = 0 #3
+
 
 shape_config = {
 
@@ -21,16 +23,16 @@ shape_config = {
     'save_dir': '.',
     'config_name':  "DM",
 
-    'show_caps': True,
+    'show_caps': False,
     'show_pcbs': False, #only runs if caps are shown, easist place to initially inject geometry
 
-    'nrows':  5, #5,  # key rows
-    'ncols':  6, #6,  # key columns
+    'nrows':  3, #5,  # key rows
+    'ncols':  5, #6,  # key columns
 
     'alpha':  pi / 12.0,  # curvature of the columns
     'beta':  pi / 36.0,  # curvature of the rows
-    'centercol':  3,  # controls left_right tilt / tenting (higher number is more tenting)
-    'centerrow_offset':  3,  # rows from max, controls front_back tilt
+    'centercol':  5,  # controls left_right tilt / tenting (higher number is more tenting)
+    'centerrow_offset':  2.8, #3,  # rows from max, controls front_back tilt
     'tenting_angle':  pi / 12.0,  # or, change this for more precise tenting control
 
     # symmetry states if it is a symmetric or asymmetric bui.  If asymmetric it doubles the generation time.
@@ -39,26 +41,53 @@ shape_config = {
     'column_style_gt5':  "orthographic",
     'column_style':  "standard",  # options include :standard, :orthographic, and :fixed
 
-    'thumb_offsets':  [6, -3, 7],
+    'reduced_outer_keys': False,  # the same number of keys across all rows
+
+    'thumb_offsets':  [0, -3, 7],
     'keyboard_z_offset':  (
-        11  # controls overall height# original=9 with centercol=3# use 16 for centercol=2
+        -5.5  # controls overall height# original=9 with centercol=3# use 16 for centercol=2
     ),
 
     ##############################
     # THUMB PARAMETERS
     ##############################
+
     # 'DEFAULT' 6-key, 'MINI' 5-key, 'CARBONFET' 6-key, 'MINIDOX' 3-key, 'TRACKBALL_ORBYL', 'TRACKBALL_CJ'
-    'thumb_style': 'TRACKBALL_ORBYL',
+    'thumb_style': 'MINIDOX',
     'default_1U_cluster': True, # only used with default, makes top right thumb cluster key 1U
     # Thumb key size.  May need slight oversizing, check w/ caps.  Additional spacing will be automatically added for larger keys.
-    'minidox_Usize': 1.6,
+    'minidox_Usize': 1.15, #1.6,
     # Thumb plate rotations, anything other than 90 degree increments WILL NOT WORK.
+
+    'minidox_thumb_plane_rotate' : [0, 8, -6],  # rotate around [x, y, z]
+    'minidox_thumb_plane_translate' : [15, 3, 0],  # translate along [x, y, z]
+
+    # Screw locations and extra screw locations for separable thumb, all from thumb origin
+    # Pulled out of hardcoding as drastic changes to the geometry may require fixes to the screw mounts.
+    # First screw in separable should be similar to the standard location as it will receive the same modifiers.
+    'default_thumb_screw_xy_locations': [[-21, -58]],
+    'default_separable_thumb_screw_xy_locations': [[-21, -58]],
+    'mini_thumb_screw_xy_locations': [[-29, -52]],
+    'mini_separable_thumb_screw_xy_locations': [[-29, -52], [-62, 10], [12, -25]],
+    'minidox_thumb_screw_xy_locations': [[-28, -26]], #[[-37, -34]],
+    'minidox_separable_thumb_screw_xy_locations': [[-37, -34], [-62, 12], [10, -25]],
+    'carbonfet_thumb_screw_xy_locations': [[-48, -37]],
+    'carbonfet_separable_thumb_screw_xy_locations': [[-48, -37], [-52, 10], [12, -35]],
+    'orbyl_thumb_screw_xy_locations': [[-53, -68]],
+    'orbyl_separable_thumb_screw_xy_locations': [[-53, -68], [-66, 8], [10, -40]],
+    'tbcj_thumb_screw_xy_locations': [[-40, -75]],
+    'tbcj_separable_thumb_screw_xy_locations': [[-40, -75], [-63, 10], [15, -40]],
+
     'thumb_plate_tr_rotation': 0.0,  # Top right plate rotation tweaks as thumb cluster is crowded for hot swap, etc.
     'thumb_plate_tl_rotation': 0.0,  # Top left plate rotation tweaks as thumb cluster is crowded for hot swap, etc.
     'thumb_plate_mr_rotation': 0.0,  # Mid right plate rotation tweaks as thumb cluster is crowded for hot swap, etc.
     'thumb_plate_ml_rotation': 0.0,  # Mid left plate rotation tweaks as thumb cluster is crowded for hot swap, etc.
     'thumb_plate_br_rotation': 0.0,  # Bottom right plate rotation tweaks as thumb cluster is crowded for hot swap, etc.
     'thumb_plate_bl_rotation': 0.0,  # Bottom right plate rotation tweaks as thumb cluster is crowded for hot swap, etc.
+    ##############################
+    # EXPERIMENTAL
+    'separable_thumb': False,  #creates a separable thumb section with additional screws to hold it down.  Only attached at base.
+    ##############################
 
     ###################################
     ## Trackball in Wall             ##
@@ -69,6 +98,7 @@ shape_config = {
     'tbiw_rotation_offset': (0.0, 0.0, 0.0),
     'tbiw_left_wall_x_offset_override': 50.0,
     'tbiw_left_wall_z_offset_override': 0.0,
+    'tbiw_left_wall_lower_x_offset': 0.0,
     'tbiw_left_wall_lower_y_offset': 0.0,
     'tbiw_left_wall_lower_z_offset': 0.0,
 
@@ -81,15 +111,17 @@ shape_config = {
     ##########################################
     'other_thumb': 'DEFAULT', # cluster used for second thumb except if ball_side == 'both'
     'tbjs_key_diameter': 70,
+    'tbjs_Uwidth': 1.2,  # size for inner key near trackball
+    'tbjs_Uheight': 1.2,  # size for inner key near trackball
     # Offsets are per key and are applied before rotating into place around the ball
     # X and Y act like Tangential and Radial around the ball
-    'tbjs_translation_offset': (0, 0, 10),  # applied to the whole assy
+    'tbjs_translation_offset': (0, 0, -10),  # applied to the whole assy
     'tbjs_rotation_offset': (0, 0, 0),  # applied to the whole assy
     'tbjs_key_translation_offsets': [
-        (0.0, 0.0, -3.0-5),
-        (0.0, 0.0, -3.0-5),
-        (0.0, 0.0, -3.0-5),
-        (0.0, 0.0, -3.0-5),
+        (0.0, 0.0, 7.0),
+        (0.0, 0.0, 7.0-5),
+        (0.0, 0.0, 7.0-5),
+        (0.0, 0.0, 7.0-5),
     ],
     'tbjs_key_rotation_offsets': [
         (0.0, 0.0, 0.0),
@@ -134,24 +166,27 @@ shape_config = {
     'pinky_1_5U': False,  # LEAVE AS FALSE, CURRENTLY BROKEN
     'first_1_5U_row': 0,
     'last_1_5U_row': 5,
+
+    'skeletal': False,
     ##############################
 
 
     'extra_width':  2.5,  # extra space between the base of keys# original= 2
-    'extra_height':  1.0,  # original= 0.5
+    'extra_height':  -1, #1.0,  # original= 0.5
 
     'wall_z_offset':  15,  # length of the first downward_sloping part of the wall
     'wall_x_offset':  5,  # offset in the x and/or y direction for the first downward_sloping part of the wall (negative)
     'wall_y_offset':  6,  # offset in the x and/or y direction for the first downward_sloping part of the wall (negative)
     'left_wall_x_offset':  12,  # specific values for the left side due to the minimal wall.
     'left_wall_z_offset':  3,  # specific values for the left side due to the minimal wall.
+    'left_wall_lower_x_offset': 0,  # specific values for the lower left corner.
     'left_wall_lower_y_offset': 0,  # specific values for the lower left corner.
     'left_wall_lower_z_offset': 0,
-    'wall_thickness':  4.5,  # wall thickness parameter used on upper/mid stage of the wall
-    'wall_base_y_thickness':  4.5,  # wall thickness at the lower stage
-    'wall_base_x_thickness':  4.5,  # wall thickness at the lower stage
+    'wall_thickness':  2.65, #4.5,  # wall thickness parameter used on upper/mid stage of the wall
+    'wall_base_y_thickness':  2.65, #4.5,  # wall thickness at the lower stage
+    'wall_base_x_thickness':  4.5, #2.65, #4.5,  # wall thickness at the lower stage
 
-    'wall_base_back_thickness':  4.5,  # wall thickness at the lower stage in the specifically in back for interface.
+    'wall_base_back_thickness':  2.75, #4.5,  # wall thickness at the lower stage in the specifically in back for interface.
 
     ## Settings for column_style == :fixed
     ## The defaults roughly match Maltron settings
@@ -197,7 +232,7 @@ shape_config = {
 
     'plate_rim': 1.5 + 0.5,
     # Undercut style dimensions
-    'clip_thickness':  1.4,
+    'clip_thickness':  1.4-0.5, #Jason
     'clip_undercut':  1.0,
     'undercut_transition':  .2,  # NOT FUNCTIONAL WITH OPENSCAD, ONLY WORKS WITH CADQUERY
 
@@ -215,7 +250,7 @@ shape_config = {
     # 'SLIDING' = Features to slide the OLED in place and use a pin or block to secure from underneath.
     # 'CLIP' = Features to set the OLED in a frame a snap a bezel down to hold it in place.
 
-    'oled_mount_type':  'CLIP',
+    'oled_mount_type':  'NONE',
     'oled_center_row': 1.25, # if not None, this will override the oled_mount_location_xyz and oled_mount_rotation_xyz settings
     'oled_translation_offset': (0, 0, 4), # Z offset tweaks are expected depending on curvature and OLED mount choice.
     'oled_rotation_offset': (0, 0, 0),
@@ -301,8 +336,10 @@ shape_config = {
     'screws_offset': 'INSIDE', #'OUTSIDE', 'INSIDE', 'ORIGINAL'
 
     'screw_insert_height': 3.8,
-    'screw_insert_bottom_radius': 5.31 / 2,
-    'screw_insert_top_radius': 5.1 / 2,
+    'screw_insert_bottom_radius': 3.65 / 2,
+    'screw_insert_top_radius': 3.45 / 2,
+
+    'screw_insert_outer_radius': 4.25,  # Common to keep interface to base
 
     # Does anyone even use these?  I think they just get in the way.
     'wire_post_height': 7,
@@ -332,6 +369,25 @@ shape_config = {
     # Offset is from the top inner corner of the top inner key.
 
     ###################################
+    ## PCB Screw Mount               ##
+    ###################################
+    "pcb_mount_ref_offset": [0, -5, 0],
+    "pcb_holder_size": [34.6, 7, 4],
+    "pcb_holder_offset": [8.9, 0, 0],
+
+    "pcb_usb_hole_size": [7.5, 10.0, 4],
+    "pcb_usb_hole_offset": [15, 0, 4.5],
+
+    "wall_thinner_size": [34, 7, 10],
+
+    "trrs_hole_size": [3, 20],
+    "trrs_offset": [0, 0, 1.5],
+
+    "pcb_screw_hole_size": [.5, 10],
+    "pcb_screw_x_offsets": [- 5.5, 7.75, 22], # for the screw positions off of reference
+    "pcb_screw_y_offset": -2,
+
+    ###################################
     ## Bottom Plate Dimensions
     ###################################
     # COMMON DIMENSION
@@ -339,7 +395,7 @@ shape_config = {
     # USED FOR CADQUERY ONLY
     'base_thickness': 3.0, # thickness in the middle of the plate
     'base_offset': 3.0, # Both start flat/flush on the bottom.  This offsets the base up (if positive)
-    'base_rim_thickness': 5.0,  # thickness on the outer frame with screws
+    'base_rim_thickness': 3.0,  # thickness on the outer frame with screws
     'screw_cbore_diameter': 4.0,
     'screw_cbore_depth': 2.0,
 
@@ -356,6 +412,13 @@ shape_config = {
     'plate_holes_depth': 20.0,
 
     ###################################
+    ## EXPERIMENTAL
+    'plate_pcb_clear': False,
+    'plate_pcb_size': (18.5, 18.5, 5),
+    'plate_pcb_offset': (0, 0, 0),# this is off of the back of the plate size.
+    ###################################
+
+    ###################################
     ## SHOW PCB FOR FIT CHECK
     ###################################
     'pcb_width': 18.0,
@@ -368,16 +431,24 @@ shape_config = {
     ###################################
     ## COLUMN OFFSETS
     ####################################
-
     'column_offsets':  [
         [0, 0, 0],
-        [0, 0, 0],
-        [0, 2.82, -4.5],
-        [0, 0, 0],
-        [0, -6, 5],# REDUCED STAGGER
+        [0, 0 + first_col_offset, 0],
+        [0, 6.5 + first_col_offset, -4.5],
+        [0, 2 + first_col_offset, 0],
+        [0, -10 + first_col_offset, 5], #[0, -8.5 + first_col_offset, 5],# REDUCED STAGGER
         [0, -6, 5],# REDUCED STAGGER
         [0, -6, 5],# NOT USED IN MOST FORMATS (7th column)
     ],
+    # 'column_offsets':  [
+    #     [0, 0, 0],
+    #     [0, 0, 0],
+    #     [0, 2.82, -4.5],
+    #     [0, 0, 0],
+    #     [0, -6, 5],# REDUCED STAGGER
+    #     [0, -6, 5],# REDUCED STAGGER
+    #     [0, -6, 5],# NOT USED IN MOST FORMATS (7th column)
+    # ],
 
 }
 
